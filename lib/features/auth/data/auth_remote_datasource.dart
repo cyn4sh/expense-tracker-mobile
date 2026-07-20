@@ -26,4 +26,13 @@ class AuthRemoteDatasource {
       throw handleDioError(e);
     }
   }
+
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post('auth/google/', data: {'id_token': idToken});
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
 }

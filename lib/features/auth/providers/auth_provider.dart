@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../data/auth_repository.dart';
 import '../data/auth_remote_datasource.dart';
 import '../data/login_dto.dart';
@@ -39,6 +41,27 @@ class AuthNotifier extends _$AuthNotifier {
       await repository.signup(dto);
       await repository.login(LoginDto(username: dto.username, password: dto.password));
     });
+  }
+
+  Future<void> loginWithGoogle() async {
+    debugPrint('>>> loginWithGoogle() called');
+    state = const AsyncLoading();
+    final repository = ref.read(authRepositoryProvider);
+
+    state = await AsyncValue.guard(() async {
+      debugPrint('>>> calling GoogleSignIn.instance.authenticate()');
+      final account = await GoogleSignIn.instance.authenticate().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw Exception('Google authenticate() timed out after 15s'),
+      );
+      debugPrint('>>> authenticate() returned: ${account.email}');
+      final idToken = account.authentication.idToken;
+      if (idToken == null) {
+        throw Exception('Google sign-in did not return an ID token');
+      }
+      await repository.loginWithGoogle(idToken);
+    });
+    debugPrint('>>> loginWithGoogle() finished, state: $state');
   }
 
   Future<void> logout() async {

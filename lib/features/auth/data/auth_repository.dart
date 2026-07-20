@@ -20,6 +20,12 @@ class AuthRepository {
     return _remoteDatasource.signup(dto);
   }
 
+  Future<void> loginWithGoogle(String idToken) async {
+    final tokens = await _remoteDatasource.loginWithGoogle(idToken);
+    await _secureStorageService.saveAccessToken(tokens['access'] as String);
+    await _secureStorageService.saveRefreshToken(tokens['refresh'] as String);
+  }
+
   Future<void> logout() async {
     await _secureStorageService.clearTokens();
   }
