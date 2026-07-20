@@ -5,6 +5,7 @@ import '../data/login_dto.dart';
 import '../data/signup_dto.dart';
 import '../../../core/network/api_client_provider.dart';
 import '../../../core/storage/secure_storage_service.dart';
+import '../../profile/data/profile_provider.dart';
 
 part 'auth_provider.g.dart';
 
@@ -50,5 +51,14 @@ class AuthNotifier extends _$AuthNotifier {
 Future<bool> isLoggedIn(Ref ref) async {
   final secureStorage = SecureStorageService();
   final token = await secureStorage.getAccessToken();
-  return token != null && token.isNotEmpty;
+  if (token == null || token.isEmpty) {
+    return false;
+  }
+  try {
+    final profileRepository = ref.read(profileRepositoryProvider);
+    await profileRepository.getMe();
+    return true;
+  } catch (_) {
+    return false;
+  }
 }

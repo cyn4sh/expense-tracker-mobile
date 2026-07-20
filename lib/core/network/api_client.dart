@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../storage/secure_storage_service.dart';
+import '../config/app_config.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -8,7 +9,7 @@ class ApiClient {
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://10.0.2.2:8000/api/',
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         contentType: 'application/json',
@@ -25,34 +26,34 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (error, handler) async {
-  if (error.response?.statusCode == 401) {
-    final refreshToken = await _secureStorage.getRefreshToken();
+          if (error.response?.statusCode == 401) {
+            final refreshToken = await _secureStorage.getRefreshToken();
 
-    if (refreshToken != null) {
-      try {
-        final response = await Dio().post(
-          'http://10.0.2.2:8000/api/token/refresh/',
-          data: {'refresh': refreshToken},
-        );
+            if (refreshToken != null) {
+              try {
+                final response = await Dio().post(
+                  '${AppConfig.apiBaseUrl}token/refresh/',
+                  data: {'refresh': refreshToken},
+                );
 
-        final newAccessToken = response.data['access'];
-        await _secureStorage.saveAccessToken(newAccessToken);
+                final newAccessToken = response.data['access'];
+                await _secureStorage.saveAccessToken(newAccessToken);
 
-        error.requestOptions.headers['Authorization'] =
-            'Bearer $newAccessToken';
+                error.requestOptions.headers['Authorization'] =
+                    'Bearer $newAccessToken';
 
-        final retryResponse = await dio.fetch(error.requestOptions);
-        return handler.resolve(retryResponse);
-      } catch (e) {
-        await _secureStorage.clearTokens();
-        return handler.next(error);
-      }
-    } else {
-      await _secureStorage.clearTokens();
-    }
-  }
-  return handler.next(error);
-},
+                final retryResponse = await dio.fetch(error.requestOptions);
+                return handler.resolve(retryResponse);
+              } catch (e) {
+                await _secureStorage.clearTokens();
+                return handler.next(error);
+              }
+            } else {
+              await _secureStorage.clearTokens();
+            }
+          }
+          return handler.next(error);
+        },
       ),
     );
   }
