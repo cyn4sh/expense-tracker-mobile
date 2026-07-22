@@ -8,6 +8,7 @@ import '../../../auth/presentation/screens/auth_gate.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../data/profile_provider.dart';
+import '../../providers/email_verified_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -38,6 +39,19 @@ class ProfileScreen extends ConsumerWidget {
             AppSpacing.md,
           ),
           children: [
+            ref.watch(emailVerifiedProvider).maybeWhen(
+              data: (verified) => verified
+                  ? const SizedBox.shrink()
+                  : Card(
+                      color: theme.colorScheme.errorContainer,
+                      child: const ListTile(
+                        leading: Icon(Icons.warning_amber_rounded),
+                        title: Text('Please verify your email'),
+                        subtitle: Text('Check your inbox for a verification link.'),
+                      ),
+                    ),
+              orElse: () => const SizedBox.shrink(),
+            ),
             SwitchListTile(
               secondary: const Icon(Icons.dark_mode_outlined),
               title: const Text('Dark mode'),
